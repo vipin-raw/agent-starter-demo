@@ -45,28 +45,28 @@ resource "github_repository" "repo" {
 
 # Reference existing GitHub PAT secret created by gcloud CLI
 data "google_secret_manager_secret" "github_pat" {
-  project   = var.cicd_runner_project_id
+  project   = var.project_id
   secret_id = var.github_pat_secret_id
 }
 
 # Get CICD project data for Cloud Build service account
-data "google_project" "cicd_project" {
-  project_id = var.cicd_runner_project_id
+data "google_project" "main_project_data" {
+  project_id = var.project_id
 }
 
 # Grant Cloud Build service account access to GitHub PAT secret
 resource "google_secret_manager_secret_iam_member" "cloudbuild_secret_accessor" {
-  project   = var.cicd_runner_project_id
+  project   = var.project_id
   secret_id = data.google_secret_manager_secret.github_pat.secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:service-${data.google_project.cicd_project.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
-  depends_on = [resource.google_project_service.cicd_services]
+  member    = "serviceAccount:service-${data.google_project.main_project_data.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+  depends_on = [resource.google_project_service.project_services]
 }
 
 # Create the GitHub connection (fallback for manual Terraform usage)
 resource "google_cloudbuildv2_connection" "github_connection" {
   count      = var.create_cb_connection ? 0 : 1
-  project    = var.cicd_runner_project_id
+  project    = var.project_id
   location   = var.region
   name       = var.host_connection_name
 
@@ -77,24 +77,22 @@ resource "google_cloudbuildv2_connection" "github_connection" {
     }
   }
   depends_on = [
-    resource.google_project_service.cicd_services,
-    resource.google_project_service.deploy_project_services,
+    resource.google_project_service.project_services,
     resource.google_secret_manager_secret_iam_member.cloudbuild_secret_accessor
   ]
 }
 
 
 resource "google_cloudbuildv2_repository" "repo" {
-  project  = var.cicd_runner_project_id
+  project  = var.project_id
   location = var.region
   name     = var.repository_name
   
   # Use existing connection ID when it exists, otherwise use the created connection
-  parent_connection = var.create_cb_connection ? "projects/${var.cicd_runner_project_id}/locations/${var.region}/connections/${var.host_connection_name}" : google_cloudbuildv2_connection.github_connection[0].id
+  parent_connection = var.create_cb_connection ? "projects/${var.project_id}/locations/${var.region}/connections/${var.host_connection_name}" : google_cloudbuildv2_connection.github_connection[0].id
   remote_uri       = "https://github.com/${var.repository_owner}/${var.repository_name}.git"
   depends_on = [
-    resource.google_project_service.cicd_services,
-    resource.google_project_service.deploy_project_services,
+    resource.google_project_service.project_services,
     data.github_repository.existing_repo,
     github_repository.repo,
     google_cloudbuildv2_connection.github_connection,

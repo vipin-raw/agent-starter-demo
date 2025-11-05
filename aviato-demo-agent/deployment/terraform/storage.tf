@@ -12,29 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-provider "google" {
-  region = var.region
-  user_project_override = true
-}
-
 resource "google_storage_bucket" "bucket_load_test_results" {
-  name                        = "${var.cicd_runner_project_id}-${var.project_name}-load-test"
+  name                        = "${var.project_id}-${var.project_name}-load-test"
   location                    = var.region
-  project                     = var.cicd_runner_project_id
+  project                     = var.project_id
   uniform_bucket_level_access = true
   force_destroy               = true
-  depends_on                  = [resource.google_project_service.cicd_services, resource.google_project_service.deploy_project_services]
+  depends_on                  = [resource.google_project_service.project_services]
+
+  labels = {
+    "created-by" = "terraform"
+    "purpose"    = "load-test-results"
+    "agent"      = var.project_name
+  }
 }
 
 resource "google_storage_bucket" "logs_data_bucket" {
-  for_each                    = toset(local.all_project_ids)
-  name                        = "${each.value}-${var.project_name}-logs"
+  name                        = "${var.project_id}-${var.project_name}-logs" 
   location                    = var.region
-  project                     = each.value
+  project                     = var.project_id 
   uniform_bucket_level_access = true
   force_destroy               = true
 
-  depends_on = [resource.google_project_service.cicd_services, resource.google_project_service.deploy_project_services]
+  depends_on = [resource.google_project_service.project_services]
+
+  labels = {
+    "created-by" = "terraform"
+    "purpose"    = "build-logs"
+    "agent"      = var.project_name
+  }
 }
 
 resource "google_artifact_registry_repository" "repo-artifacts-genai" {
@@ -42,9 +48,12 @@ resource "google_artifact_registry_repository" "repo-artifacts-genai" {
   repository_id = "${var.project_name}-repo"
   description   = "Repo for Generative AI applications"
   format        = "DOCKER"
-  project       = var.cicd_runner_project_id
-  depends_on    = [resource.google_project_service.cicd_services, resource.google_project_service.deploy_project_services]
+  project       = var.project_id
+  depends_on    = [resource.google_project_service.project_services]
+
+  labels = {
+    "created-by" = "terraform"
+    "purpose"    = "container-images"
+    "agent"      = var.project_name
+  }
 }
-
-
-

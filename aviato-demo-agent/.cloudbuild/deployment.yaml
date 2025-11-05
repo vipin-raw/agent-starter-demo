@@ -38,13 +38,13 @@ steps:
     args:
       - "run"
       - "deploy"
-      - "aviato-demo-agent"
+      - "aviato-demo-agent-agent" 
       - "--image"
       - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME"
       - "--region"
       - "${_REGION}"
       - "--project"
-      - "${_STAGING_PROJECT_ID}"
+      - "${_DEPLOY_PROJECT_ID}" 
 
   # Fetch Staging Service URL
   - name: "gcr.io/cloud-builders/gcloud"
@@ -53,8 +53,8 @@ steps:
     args:
       - "-c"
       - |
-        echo $(gcloud run services describe aviato-demo-agent \
-        --region ${_REGION} --project ${_STAGING_PROJECT_ID} --format="value(status.url)") > staging_url.txt
+        echo $(gcloud run services describe aviato-demo-agent-agent \
+        --region ${_REGION} --project ${_DEPLOY_PROJECT_ID} --format="value(status.url)") > staging_url.txt
 
   # Fetch ID Token
   - name: gcr.io/cloud-builders/gcloud
@@ -98,36 +98,9 @@ steps:
         echo "HTTP link: https://console.cloud.google.com/storage/browser/${_BUCKET_NAME_LOAD_TEST_RESULTS}/results-$${_TIMESTAMP}"
         echo "_________________________________________________________________________"
 
-  # Trigger Prod Deployment
-  - name: gcr.io/cloud-builders/gcloud
-    id: trigger-prod-deployment
-    entrypoint: gcloud
-    args:
-      - "beta"
-      - "builds"
-      - "triggers"
-      - "run"
-      - "deploy-aviato-demo-agent"
-      - "--region"
-      - "$LOCATION"
-      - "--project"
-      - "$PROJECT_ID"
-      - "--sha"
-      - $COMMIT_SHA
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: echo-view-build-trigger-link
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        echo "_________________________________________________________________________"
-        echo "Production deployment triggered. View progress and / or approve on the Cloud Build Console:"
-        echo "https://console.cloud.google.com/cloud-build/builds;region=$LOCATION"
-        echo "_________________________________________________________________________"
-
 substitutions:
-  _STAGING_PROJECT_ID: YOUR_STAGING_PROJECT_ID
+  # This is now your main deployment project ID, passed from the build trigger
+  _DEPLOY_PROJECT_ID: YOUR_DEPLOY_PROJECT_ID 
   _REGION: us-central1
 
 logsBucket: gs://${PROJECT_ID}-aviato-demo-agent-logs/build-logs

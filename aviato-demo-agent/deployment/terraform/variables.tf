@@ -18,19 +18,9 @@ variable "project_name" {
   default     = "aviato-demo-agent"
 }
 
-variable "prod_project_id" {
+variable "project_id" {
   type        = string
-  description = "**Production** Google Cloud Project ID for resource deployment."
-}
-
-variable "staging_project_id" {
-  type        = string
-  description = "**Staging** Google Cloud Project ID for resource deployment."
-}
-
-variable "cicd_runner_project_id" {
-  type        = string
-  description = "Google Cloud Project ID where CI/CD pipelines will execute."
+  description = "The Google Cloud Project ID for all resources (CI/CD, Staging, Production)."
 }
 
 variable "region" {
@@ -131,4 +121,3 @@ variable "create_repository" {
   type        = bool
   default     = false
 }
-

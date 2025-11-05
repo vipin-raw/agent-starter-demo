@@ -25,18 +25,16 @@ terraform {
       version = "~> 6.5.0"
     }
   }
+
+  backend "gcs" {
+    # bucket is required to store state file
+    bucket = "aviato-demo-agent-terraform-state"
+    # prefix is required to store state file in a subdirectory 
+    prefix = "terraform/state"
+  }
 }
 
 provider "google" {
-  alias                 = "staging_billing_override"
-  billing_project       = var.staging_project_id
-  region = var.region
-  user_project_override = true
-}
-
-provider "google" {
-  alias                 = "prod_billing_override"
-  billing_project       = var.prod_project_id
-  region = var.region
-  user_project_override = true
+  project = var.project_id
+  region  = var.region
 }

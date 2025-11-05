@@ -42,6 +42,16 @@ resource "google_project_iam_member" "cicd_run_invoker_artifact_registry_reader"
 
 }
 
+# 4. Allow the CICD SA to act as the Application SA during Cloud Run deployments
+resource "google_service_account_iam_member" "cicd_can_act_as_app_sa" {
+  service_account_id = google_service_account.app_sa.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.cicd_runner_sa.email}"
+  depends_on = [
+    google_service_account.app_sa,
+    google_service_account.cicd_runner_sa
+  ]
+}
 
 
 

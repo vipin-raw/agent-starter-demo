@@ -27,13 +27,13 @@ resource "google_cloudbuild_trigger" "pr_checks" {
     }
   }
 
-  filename = ".cloudbuild/pr_checks.yaml"
+  filename = "aviato-demo-agent/.cloudbuild/pr_checks.yaml"
   included_files = [
-    "app/**",
-    "data_ingestion/**",
-    "tests/**",
-    "deployment/**",
-    "uv.lock",
+    "aviato-demo-agent/app/**",
+    "aviato-demo-agent/data_ingestion/**",
+    "aviato-demo-agent/tests/**",
+    "aviato-demo-agent/deployment/**",
+    "aviato-demo-agent/uv.lock",
   
   ]
   include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
@@ -60,13 +60,13 @@ resource "google_cloudbuild_trigger" "cd_pipeline" {
     }
   }
 
-  filename = ".cloudbuild/deployment.yaml"
+  filename = "aviato-demo-agent/.cloudbuild/deployment.yaml"
   included_files = [
-    "app/**",
-    "data_ingestion/**",
-    "tests/**",
-    "deployment/**",
-    "uv.lock"
+    "aviato-demo-agent/app/**",
+    "aviato-demo-agent/data_ingestion/**",
+    "aviato-demo-agent/tests/**",
+    "aviato-demo-agent/deployment/**",
+    "aviato-demo-agent/uv.lock"
   ]
   include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
   substitutions = {

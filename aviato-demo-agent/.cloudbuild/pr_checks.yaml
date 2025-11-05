@@ -23,7 +23,7 @@ steps:
         pip install uv==0.8.13 --user && uv sync --locked
     env:
       - 'PATH=/usr/local/bin:/usr/bin:~/.local/bin'
-
+    dir: "aviato-demo-agent"
   # Run unit tests using pytest
   - name: "python:3.12-slim"
     id: unit-tests
@@ -34,6 +34,7 @@ steps:
         uv run pytest tests/unit
     env:
       - 'PATH=/usr/local/bin:/usr/bin:~/.local/bin'
+    dir: "aviato-demo-agent"
 
   # Run integration tests
   - name: "python:3.12-slim"
@@ -45,7 +46,8 @@ steps:
         uv run pytest tests/integration
     env:
       - 'PATH=/usr/local/bin:/usr/bin:~/.local/bin'
-
+    dir: "aviato-demo-agent"
+    
 logsBucket: gs://${PROJECT_ID}-aviato-demo-agent-logs/build-logs
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

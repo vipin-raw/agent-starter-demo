@@ -24,6 +24,7 @@ steps:
         "COMMIT_SHA=$COMMIT_SHA",
         ".",
       ]
+    dir: "aviato-demo-agent"  
   - name: "gcr.io/cloud-builders/docker"
     args:
       [
@@ -83,7 +84,7 @@ steps:
         --html=tests/load_test/.results/report.html
     env:
       - 'PATH=/usr/local/bin:/usr/bin:~/.local/bin'
-
+    dir: "aviato-demo-agent"
   # Export Load Test Results to GCS
   - name: gcr.io/cloud-builders/gcloud
     id: export-results-to-gcs
@@ -97,7 +98,8 @@ steps:
         echo "Load test results copied to gs://${_BUCKET_NAME_LOAD_TEST_RESULTS}/results-$${_TIMESTAMP}"
         echo "HTTP link: https://console.cloud.google.com/storage/browser/${_BUCKET_NAME_LOAD_TEST_RESULTS}/results-$${_TIMESTAMP}"
         echo "_________________________________________________________________________"
-
+    dir: "aviato-demo-agent"
+    
 substitutions:
   # This is now your main deployment project ID, passed from the build trigger
   _DEPLOY_PROJECT_ID: YOUR_DEPLOY_PROJECT_ID 

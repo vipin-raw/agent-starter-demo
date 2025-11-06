@@ -68,7 +68,10 @@ steps:
     args:
       - "-c"
       - |
-        echo $(gcloud auth print-identity-token -q) > id_token.txt
+        set -eo pipefail
+        echo "Attempting to fetch identity token..."
+        gcloud auth print-identity-token -q > id_token.txt
+        echo "Successfully fetched token."
     dir: "aviato-demo-agent"
 
   # Load Testing
@@ -78,12 +81,20 @@ steps:
     args:
       - "-c"
       - |
+        set -eo pipefail
+        echo "--- Debugging Load Test ---"
+        echo "Current directory: $(pwd)"
+        echo "Files in directory:"
+        ls -la
         export _ID_TOKEN=$(cat id_token.txt)
         export _STAGING_URL=$(cat staging_url.txt)
+        echo "ID Token is: [$_ID_TOKEN]"
+        echo "Staging URL is: [$_STAGING_URL]"
+        echo "-----------------------------"
         pip install locust==2.31.1 --user
         locust -f tests/load_test/load_test.py \
         --headless \
-        -H $_STAGING_URL \
+        -H $$_STAGING_URL \
         -t 30s -u 10 -r 0.5 \
         --csv=tests/load_test/.results/results \
         --html=tests/load_test/.results/report.html

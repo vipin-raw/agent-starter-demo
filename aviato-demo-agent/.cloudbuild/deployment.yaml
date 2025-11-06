@@ -45,9 +45,7 @@ steps:
       - "--region"
       - "${_REGION}"
       - "--project"
-      - "${_DEPLOY_PROJECT_ID}" 
       - "${_DEPLOY_PROJECT_ID}"
-    dir: "aviato-demo-agent"
 
   # Fetch Staging Service URL
   - name: "gcr.io/cloud-builders/gcloud"

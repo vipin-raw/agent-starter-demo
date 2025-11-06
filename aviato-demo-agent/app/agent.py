@@ -64,7 +64,3 @@ root_agent = Agent(
     instruction="You are a helpful AI assistant designed to provide accurate and useful information.",
     tools=[get_weather, get_current_time],
 )
-
-# Testing agenet
-#testing base adk
-#testing 2

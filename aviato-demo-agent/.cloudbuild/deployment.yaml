@@ -54,8 +54,11 @@ steps:
     args:
       - "-c"
       - |
-        echo $(gcloud run services describe aviato-demo-agent-agent \
-        --region ${_REGION} --project ${_DEPLOY_PROJECT_ID} --format="value(status.url)") > staging_url.txt
+        set -eo pipefail
+        echo "Attempting to fetch URL for aviato-demo-agent-agent..."
+        gcloud run services describe aviato-demo-agent-agent \
+        --region ${_REGION} --project ${_DEPLOY_PROJECT_ID} --format="value(status.url)" > staging_url.txt
+        cat staging_url.txt
     dir: "aviato-demo-agent"
 
   # Fetch ID Token

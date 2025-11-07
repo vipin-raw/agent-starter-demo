@@ -1,66 +1,119 @@
 # Copyright 2025 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# ... (licenses) ...
 
-import datetime
 import os
-from zoneinfo import ZoneInfo
-
 import google.auth
-from google.adk.agents import Agent
+from google.adk.agents import Agent, SequentialAgent, LlmAgent
+import app.config as config
+
+
+# --- NEW IMPORTS FOR MCP ---
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
+from google.adk.tools.mcp_tool.mcp_toolset import StdioServerParameters
+
+
+
+# --- Import Your *Custom* Tools (NOT Salesforce or Monday) ---
+from app.tools.rag import get_dynamic_rules_tool
+from app.tools.inventory import query_inventory_tool
+from app.tools.workspace import create_slide_deck_tool, create_media_sheet_tool
+
 
 _, project_id = google.auth.default()
-os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
-os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
-os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
+# ... (os.environ lines) ...
+
+# --- 1. CONFIGURE SALESFORCE MCP TOOLSET (Already Done) ---
+SALESFORCE_MCP_SERVER_URL = "https://api.salesforce.com/platform/mcp/v1-beta.2/platform/sobject-all"
+salesforce_tools = MCPToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="npx",
+            args=[
+                "-y", "mcp-remote@0.1.18",
+                SALESFORCE_MCP_SERVER_URL,
+                "8080", # Salesforce proxy listens on port 8080
+                "--static-oauth-client-info",
+                f'{{"client_id":"{config.SALESFORCE_CONSUMER_KEY}","client_secret":""}}'
+            ]
+        )
+    )
+)
+
+# --- 2. CONFIGURE MONDAY.COM MCP TOOLSET (The New Step) ---
+# This uses the official "Hosted MCP" URL from the README
+MONDAY_MCP_SERVER_URL = "https://mcp.monday.com/mcp"
+monday_tools = MCPToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="npx",
+            args=[
+                "-y", "mcp-remote@0.1.18", # We use the same mcp-remote proxy
+                MONDAY_MCP_SERVER_URL,
+                "8081", # <-- !! MUST USE A DIFFERENT PORT (e.g., 8081) !!
+                "--static-oauth-client-info",
+                f'{{"client_id":"{config.MONDAY_CLIENT_ID}","client_secret":""}}'
+                # The proxy will use http://localhost:8081/oauth/callback
+            ]
+        )
+    )
+)
+# --- END OF MCP CONFIGURATION ---
 
 
-def get_weather(query: str) -> str:
-    """Simulates a web search. Use it get information on weather.
+sales_pitch_agent = LlmAgent(
+    name="sales_pitch_agent",
+    model=config.GEMINI_MODEL_NAME,
 
-    Args:
-        query: A string containing the location to get weather information for.
+    # --- FINAL, UPDATED INSTRUCTION ---
+    # The agent now knows about *native* Salesforce and Monday.com tools
+    instruction=(
+        "You are a NewsCorp advertising strategist. Your job is to create a "
+        "complete, bookable pitch package using the exact data provided. "
+        "Your goal is to generate a proactive sales pitch."
+        "\n"
+        "Here is the plan you MUST follow:"
+        "1.  **GATHER DATA (Parallel):**"
+        "    - **Salesforce:** You will be given a `prospect_name`. Use your "
+        "      Salesforce tools (like `run_soql_query`) to find the Account. "
+        "      Get the prospect's industry, budget, and key objective."
+        "    - **Monday.com:** Use the `list_users_and_teams` tool to see who is on "
+        "      the sales team. Use `get_board_schema` to find the 'Sales Backlog' board ID."
+        "    - **Inventory:** Use the `query_inventory` tool to get available ad slots."
+        "    - **RAG:** Use the `get_dynamic_rules` tool to get sales best practices."
+        "2.  **STRATEGIZE (LLM Call):**"
+        "    - You will then be called (by the system) with all this data."
+        "    - Your job is to analyze all inputs and generate the final JSON output "
+        "      containing `strategy_rationale`, `slide_content`, and `media_schedule_line_items`."
+        "3.  **EXECUTE ACTIONS (Parallel):**"
+        "    - Use `create_slide_deck` with the `slide_content`."
+        "    - Use `create_media_sheet` with the `media_schedule_line_items`."
+        "4.  **FINALIZE TASK:**"
+        "    - Use your **Monday.com `create_item` tool** to create a follow-up task "
+        "      on the 'Sales Backlog' board. The task name should be the prospect's name. "
+        "      You must put the URLs for the slide and sheet in the task update."
+        "5.  **RESPOND:**"
+        "    - Return the final Google Slide and Google Sheet URLs to the user."
+    ),
 
-    Returns:
-        A string with the simulated weather information for the queried location.
-    """
-    if "sf" in query.lower() or "san francisco" in query.lower():
-        return "It's 60 degrees and foggy."
-    return "It's 90 degrees and sunny."
+    # --- FINAL TOOLS LIST ---
+    tools=[
+        salesforce_tools,      # Natively provides `run_soql_query`, etc.
+        monday_tools,          # Natively provides `create_item`, `get_board_schema`, etc.
+        query_inventory_tool,  # Your custom tool
+        get_dynamic_rules_tool,  # Your custom tool
+        create_slide_deck_tool,  # Your custom tool
+        create_media_sheet_tool, # Your custom tool
+    ],
+)
 
-
-def get_current_time(query: str) -> str:
-    """Simulates getting the current time for a city.
-
-    Args:
-        city: The name of the city to get the current time for.
-
-    Returns:
-        A string with the current time information.
-    """
-    if "sf" in query.lower() or "san francisco" in query.lower():
-        tz_identifier = "America/Los_Angeles"
-    else:
-        return f"Sorry, I don't have timezone information for query: {query}."
-
-    tz = ZoneInfo(tz_identifier)
-    now = datetime.datetime.now(tz)
-    return f"The current time for query {query} is {now.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
-
-
-root_agent = Agent(
+# ... (root_agent setup remains the same) ...
+root_agent = SequentialAgent(
     name="root_agent",
-    model="gemini-2.5-flash",
-    instruction="You are a helpful AI assistant designed to provide accurate and useful information.",
-    tools=[get_weather, get_current_time],
+    description=config.ROOT_AGENT_DESCRIPTION,
+    sub_agents=[
+       sales_pitch_agent
+    ],
 )

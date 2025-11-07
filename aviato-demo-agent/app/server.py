@@ -42,7 +42,7 @@ processor = export.BatchSpanProcessor(CloudTraceLoggingSpanExporter())
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)
 
-AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+AGENT_DIR = os.path.dirname(os.path.realpath(__file__))
 # In-memory session configuration - no persistent storage
 session_service_uri = None
 

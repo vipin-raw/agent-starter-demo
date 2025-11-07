@@ -1,0 +1,20 @@
+# requirements.txt
+
+# Google Agent Development Kit (ADK) Core Libraries
+google-adk
+
+google-api-python-client
+google-cloud-secret-manager
+google-cloud-storage
+# Add monday.com and salesforce clients
+monday-sdk-python
+simple-salesforce
+
+
+
+# Python-dotenv to load credentials from the .env file
+python-dotenv
+absl-py
+requests
+msal
+python-docx

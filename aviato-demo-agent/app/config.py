@@ -12,15 +12,13 @@ ROOT_AGENT_DESCRIPTION = (
 # --- NEW ENDPOINTS FOR YOUR TOOLS ---
 
 # --- NEW SALESFORCE MCP CONFIG ---
-SALESFORCE_CONSUMER_KEY = "PASTE_YOUR_CONSUMER_KEY_HERE"
+SALESFORCE_CONSUMER_KEY = "3MVG97L7PWbPq6Uw5fuwkN3EomRT_0V.4HO_L31z7PR1w_Ru7Di.10UDbKqhAgKMLyhyMQRHJC87m9Uljtib"
 
 # Custom Inventory MCP [cite: 27]
 INVENTORY_MCP_ENDPOINT = "https://your-inventory-mcp-url.com/api/query"
 INVENTORY_API_KEY = "your-secret-api-key"
 
-# Monday.com API
-MONDAY_API_ENDPOINT = "https://api.monday.com/v2"
-MONDAY_API_KEY = "your-secret-api-key" # Or use Secret Manager
+MONDAY_CLIENT_ID = "499ef7ad315b392ceeabcc27607ffa1a"
 
 # Vertex AI Search (RAG) [cite: 28]
 RAG_PROJECT_ID = "your-gcp-project-id"
